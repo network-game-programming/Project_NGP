@@ -1,3 +1,0 @@
-﻿C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(438,5): warning MSB8004: Output Directory does not end with a trailing slash.  This build instance will add the slash as it is required to allow proper evaluation of the Output Directory.
-  Player.cpp
-  Project_NGP.vcxproj -> C:\Users\Bum\Desktop\GitHub\Project_NGP\Project_NGP\Project_NGP\..\Bin\Bin32_Debug\Project_NGP.exe

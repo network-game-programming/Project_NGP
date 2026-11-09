@@ -259,3 +259,20 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+
+# MSVC build artifacts (Project_NGP / Project_NGP_Server)
+*.tlog
+*.lastbuildstate
+*.iobj
+*.ipdb
+*.idb
+*.res
+*.vcxproj.user
+*.vcxproj.filters.user
+*.sln.user
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
