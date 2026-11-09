@@ -12,7 +12,7 @@ NetworkManager::~NetworkManager()
 
 bool NetworkManager::Initialize()
 {
-	// À©¼Ó ÃÊ±âÈ­
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½È­
 	if (0 != WSAStartup(MAKEWORD(2, 2), &m_wsa))
 		return false;
 
@@ -20,6 +20,18 @@ bool NetworkManager::Initialize()
 	m_serversocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, 0);
 	if (INVALID_SOCKET == m_serversocket)
 		return false;
+
+	// LAN ì§€ì—° ëŒ€ì‘: Nagle ë„ê³  ë²„í¼/íƒ€ìž„ì•„ì›ƒ ì„¤ì •
+	{
+		BOOL noDelay = TRUE;
+		setsockopt(m_serversocket, IPPROTO_TCP, TCP_NODELAY, (char*)&noDelay, sizeof(noDelay));
+		int bufSize = 64 * 1024;
+		setsockopt(m_serversocket, SOL_SOCKET, SO_SNDBUF, (char*)&bufSize, sizeof(bufSize));
+		setsockopt(m_serversocket, SOL_SOCKET, SO_RCVBUF, (char*)&bufSize, sizeof(bufSize));
+		DWORD timeoutMs = 3000;
+		setsockopt(m_serversocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeoutMs, sizeof(timeoutMs));
+		setsockopt(m_serversocket, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeoutMs, sizeof(timeoutMs));
+	}
 
 
 	return true;
@@ -33,22 +45,22 @@ void NetworkManager::Release()
 
 bool NetworkManager::ConnectToServer(const char* ip)
 {
-	// ¼­¹ö ±¸Á¶Ã¼¸¦ ¾ç½Ä¿¡ ¸Â°Ô Ã¤¿ò
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼ï¿½ï¿½ ï¿½ï¿½Ä¿ï¿½ ï¿½Â°ï¿½ Ã¤ï¿½ï¿½
 	ZeroMemory(&m_serverAddr, sizeof(sockaddr_in));
 	m_serverAddr.sin_family = AF_INET;
 	m_serverAddr.sin_port = htons(SERVER_PORT);
 	m_serverAddr.sin_addr.S_un.S_addr = inet_addr(ip);
 
-	// ¿¬°á ¿äÃ»
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ã»
 	int result = connect(m_serversocket, (struct sockaddr*) &m_serverAddr, sizeof(m_serverAddr));
 
 	if (SOCKET_ERROR == result)
 	{
-		MessageBox(g_hWnd_New, L"Á¢¼Ó¿¡ ½ÇÆÐÇÏ¿´½À´Ï´Ù.\n IPÁÖ¼Ò³ª ¼­¹ö »óÅÂ¸¦ È®ÀÎÇÏ¿© ´Ù½Ã Á¢¼ÓÇØÁÖ¼¼¿ä.", L"Error", MB_OK);
+		MessageBox(g_hWnd_New, L"ï¿½ï¿½ï¿½Ó¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¿ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.\n IPï¿½Ö¼Ò³ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Â¸ï¿½ È®ï¿½ï¿½ï¿½Ï¿ï¿½ ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¼ï¿½ï¿½ï¿½.", L"Error", MB_OK);
 		return false;
 	}
 
-	// ·Î±×ÀÎ Ã³¸®
+	// ï¿½Î±ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½
 	SPLOGIN info;
 	info.type = SP_LOGIN_OK;
 	info.id = 0;
@@ -63,7 +75,7 @@ bool NetworkManager::ConnectToServer(const char* ip)
 	
 	m_myID = recvInfo.id;
 
-	MessageBox(g_hWnd_New, L"¼­¹ö¿¡ Á¢¼ÓÇÏ¿´½À´Ï´Ù!", L"¾Ë¸²", MB_OK);
+	MessageBox(g_hWnd_New, L"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¿ï¿½ï¿½ï¿½ï¿½Ï´ï¿½!", L"ï¿½Ë¸ï¿½", MB_OK);
 	return true;
 }
 
@@ -165,7 +177,7 @@ bool NetworkManager::SendChatting(const TCHAR* chat)
 
 void NetworkManager::AttackCollisionForNetwork(ObjectManager::MAPOBJ* TargetList, ObjectManager::MAPOBJ* SkillList)
 {
-	// ·ºÆ® Ãæµ¹ °Ë»ç
+	// ï¿½ï¿½Æ® ï¿½æµ¹ ï¿½Ë»ï¿½
 	RECT rc = {};
 
 	for (auto& target : *TargetList)
@@ -180,7 +192,7 @@ void NetworkManager::AttackCollisionForNetwork(ObjectManager::MAPOBJ* TargetList
 
 			if (IntersectRect(&rc, &target.second->GetCollideRect(), &Skill.second->GetCollideRect()))
 			{
-				// ¸ó½ºÅÍ°¡ ¸ÂÀº Á¤º¸¸¦ ¼­¹ö·Î º¸³»ÁØ´Ù.
+				// ï¿½ï¿½ï¿½Í°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø´ï¿½.
 				SendHitInfo(_wtoi(target.first), 10/*Damage*/);
 			}
 		}
@@ -189,49 +201,62 @@ void NetworkManager::AttackCollisionForNetwork(ObjectManager::MAPOBJ* TargetList
 
 int NetworkManager::Send(void* packet_struct, char type, short size)
 {
-	// ÆÐÅ¶º¯È¯ÈÄ
+	// ï¿½ï¿½Å¶ï¿½ï¿½È¯ï¿½ï¿½
 	Packing(m_netBuffer, packet_struct, type);
 
-	// ¼­¹ö·Î ÆÐÅ¶À» º¸³½´Ù.
-	int byte = send(m_serversocket, m_netBuffer,
-		size, 0);
+	// ì „ë¶€ ì „ì†¡(send-all): ë¶€ë¶„ ì „ì†¡ì‹œ ë°˜ë³µ
+	int sent = 0;
+	while (sent < size)
+	{
+		int byte = send(m_serversocket, m_netBuffer + sent,
+			size - sent, 0);
+		if (SOCKET_ERROR == byte || 0 == byte)
+			return -1;
+		sent += byte;
+	}
 
-	if (0 == byte)
-		return -1;
-
-	return byte;
+	return sent;
 }
 
 int NetworkManager::Recv(void* OutPacket_struct)
 {
-	// ¿ì¼± Á¤ÇØ³õÀº ¹ÞÀ» »çÀÌÁî¸¦ ¸ÕÀú ¹Þ´Â´Ù. 
-	// (shortÇüÀÌ±â ¶§¹®¿¡ ÀÌ »çÀÌÁî¸¶Àú ºÐÇÒÇÏ¿© ¹ÞÀ» ¼ö ÀÖÀ¸¹Ç·Î µÎ¹øÀ¸·Î ³ª´©¾î ¹Þ´Â´Ù.)
-	int byte = recv(m_serversocket, m_netBuffer, 2, 0);
-	if (0 == byte)
-		return -1;
+	// ï¿½ì¼± ï¿½ï¿½ï¿½Ø³ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½î¸¦ ï¿½ï¿½ï¿½ï¿½ ï¿½Þ´Â´ï¿½. 
+	// (shortï¿½ï¿½ï¿½Ì±ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½î¸¶ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ ï¿½Î¹ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Þ´Â´ï¿½.)
+	// í—¤ë” 2ë°”ì´íŠ¸ ì •í™•ížˆ ì½ê¸°(ë¶€ë¶„ ìˆ˜ì‹  ëˆ„ì )
+	int byte = 0;
+	int headerGot = 0;
+	while (headerGot < 2)
+	{
+		int n = recv(m_serversocket, m_netBuffer + headerGot, 2 - headerGot, 0);
+		if (n <= 0)
+			return -1;
+		headerGot += n;
+	}
 
-	// ¹ÞÀ» »çÀÌÁî¸¦ º¯È¯ÇÑ´Ù.
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½î¸¦ ï¿½ï¿½È¯ï¿½Ñ´ï¿½.
 	short packet_size = 0;
 	memcpy(&packet_size, m_netBuffer, sizeof(short));
 
-	// ¹ÞÀ» »çÀÌÁî°¡ 0ÀÌ¸é ¸®ÅÏÇÑ´Ù.
-	if (0 == packet_size)
+	// í¬ê¸° ê²€ì¦: 2..MAX_BUFFER
+	if (packet_size < 2 || packet_size > MAX_BUFFER)
 		return -1;
 
-	// ¹ÞÀ» »çÀÌÁî¸¦ Á¦¿ÜÇÑ ¹ÞÀ» ÆÐÅ¶ÀÇ ½ÃÀÛÀ§Ä¡¸¦ Á¤ÇØÁØ´Ù.
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½î¸¦ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å¶ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø´ï¿½.
 	int packet_start = 2;
-	// ¹ÞÀ» ¹ÙÀÌÆ® ¼ö¸¦ Á¤ÇØÁØ´Ù.
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø´ï¿½.
 	int recv_byte = packet_size - packet_start;
 
-	// ÆÐÅ¶ÀÌ ºÐÇÒµÇ¾î ¹ÞÀ¸¸é ¹®Á¦°¡ »ý±æ ¼ö ÀÖÀ¸¹Ç·Î ´Ù ¹ÞÀ» ¶§±îÁö 
+	// ï¿½ï¿½Å¶ï¿½ï¿½ ï¿½ï¿½ï¿½ÒµÇ¾ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 
 	while (packet_start != packet_size)
 	{
 		byte = recv(m_serversocket, &m_netBuffer[packet_start], recv_byte, 0);
+		if (byte <= 0)
+			return -1;
 		recv_byte -= byte;
 		packet_start += byte;
 	}
 
-	// Ç®±â
+	// Ç®ï¿½ï¿½
 	Depacking(OutPacket_struct, m_netBuffer, packet_size);
 
 	return packet_size;
@@ -265,7 +290,7 @@ void NetworkManager::Packing(char* OutPacket, void* packet_struct, char type)
 	break;
 	case SP_OTHERPLAYER:
 	{
-		// ´Ù¸¥ ÇÃ·¹ÀÌ¾î
+		// ï¿½Ù¸ï¿½ ï¿½Ã·ï¿½ï¿½Ì¾ï¿½
 		short size = 3;
 		memcpy(&OutPacket[0], &size, sizeof(short));
 		OutPacket[2] = SP_OTHERPLAYER;
@@ -275,7 +300,7 @@ void NetworkManager::Packing(char* OutPacket, void* packet_struct, char type)
 	{
 		char* ps = reinterpret_cast<char*>(packet_struct);
 
-		// ´Ù¸¥ ÇÃ·¹ÀÌ¾î
+		// ï¿½Ù¸ï¿½ ï¿½Ã·ï¿½ï¿½Ì¾ï¿½
 		short size = 4;
 		memcpy(&OutPacket[0], &size, sizeof(short));
 		OutPacket[2] = SP_MONSTER;

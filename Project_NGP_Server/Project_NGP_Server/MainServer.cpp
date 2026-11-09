@@ -20,50 +20,57 @@ MainServer::~MainServer()
 
 bool MainServer::Initialize()
 {
-	// À¯´ÏÄÚµå ÇÑ±Û Ãâ·ÂÀ» À§ÇÔ
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½ ï¿½Ñ±ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	wcout.imbue(std::locale("korean"));
-	// À©¼Ó ÃÊ±âÈ­
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½È­
 	if (0 != WSAStartup(MAKEWORD(2, 2), &m_WSAData))
 	{
-		error_display("À©¼Ó ÃÊ±âÈ­ ½ÇÆÐ");
+		error_display("ï¿½ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½È­ ï¿½ï¿½ï¿½ï¿½");
 		return false;
 	}
 		
-	// listen ¼ÒÄÏ »ý¼º
+	// listen ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	m_listenSocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0,
 		WSA_FLAG_OVERLAPPED);
 	if (INVALID_SOCKET == m_listenSocket)
 	{ 
-		error_display("¸®½¼ ¼ÒÄÏ »ý¼º ½ÇÆÐ");
+		error_display("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
 		return false;
 	}
-	// ¼­¹ö ÁÖ¼Ò ¼ÒÄÏ ±¸Á¶Ã¼
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½Ö¼ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ã¼
 	SOCKADDR_IN serverAddr;
 	memset(&serverAddr, 0, sizeof(SOCKADDR_IN));
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(SERVER_PORT);
 	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	// Áö¿ª ÁÖ¼Ò, Æ÷Æ® ÇÒ´ç
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½Ö¼ï¿½, ï¿½ï¿½Æ® ï¿½Ò´ï¿½
 	if (0 != ::bind(m_listenSocket, (sockaddr*)&serverAddr,
 		sizeof(SOCKADDR_IN)))
 	{ 
-		error_display("¸®½¼ ¼ÒÄÏ ¹ÙÀÎµå ½ÇÆÐ");
+		error_display("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Îµï¿½ ï¿½ï¿½ï¿½ï¿½");
 		return false;
 	}
-	// ¸®½¼ ¼ÒÄÏ »óÅÂ ¸®½¼À¸·Î º¯°æ
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	if (0 != listen(m_listenSocket, SOMAXCONN))
 	{ 
-		error_display("¸®½¼ ¼ÒÄÏ »óÅÂ º¯°æ ½ÇÆÐ");
+		error_display("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
 		return false;
 	}
 	
+	{
+		BOOL noDelay = TRUE;
+		setsockopt(m_listenSocket, IPPROTO_TCP, TCP_NODELAY, (char*)&noDelay, sizeof(noDelay));
+		int bufSize = 64 * 1024;
+		setsockopt(m_listenSocket, SOL_SOCKET, SO_SNDBUF, (char*)&bufSize, sizeof(bufSize));
+		setsockopt(m_listenSocket, SOL_SOCKET, SO_RCVBUF, (char*)&bufSize, sizeof(bufSize));
+	}
 	memset(&m_clientAddr, 0, sizeof(SOCKADDR_IN));
 	
-	// iocp »ý¼º
+	// iocp ï¿½ï¿½ï¿½ï¿½
 	g_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, NULL, 0);
 	if (NULL == g_iocp)
 	{ 
-		error_display("IOCP »ý¼º ½ÇÆÐ");
+		error_display("IOCP ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
 		return false;
 	}
 
@@ -75,10 +82,10 @@ bool MainServer::Running()
 	SYSTEM_INFO sys_info;
 	GetSystemInfo(&sys_info);
 
-	// cpu thread °¹¼ö¸¦ °¡Áö°í ¿Â´Ù.
+	// cpu thread ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Â´ï¿½.
 	int thread_count = sys_info.dwNumberOfProcessors;
 
-	// cpu thread °¹¼ö¸¸Å­ ¼­¹öÃ³¸®¸¦ ÇÏ°Ú´Ù.
+	// cpu thread ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å­ ï¿½ï¿½ï¿½ï¿½Ã³ï¿½ï¿½ï¿½ï¿½ ï¿½Ï°Ú´ï¿½.
 	for (int i = 0; i < thread_count - 1; ++i)
 	{
 		m_vecThread.emplace_back(do_worker);
@@ -90,6 +97,20 @@ bool MainServer::Running()
 	while (true)
 	{
 		m_clientSocket = accept(m_listenSocket, (sockaddr*)&m_clientAddr, &addrLen);
+		if (INVALID_SOCKET == m_clientSocket) continue;
+		// LAN ì§€ì—° ëŒ€ì‘: ìˆ˜ë½í•œ ì†Œì¼“ë§ˆë‹¤ Nagle ë„ê³  ë²„í¼/íƒ€ìž„ì•„ì›ƒ/keepalive ì„¤ì •
+		{
+			BOOL noDelay = TRUE;
+			setsockopt(m_clientSocket, IPPROTO_TCP, TCP_NODELAY, (char*)&noDelay, sizeof(noDelay));
+			int bufSize = 64 * 1024;
+			setsockopt(m_clientSocket, SOL_SOCKET, SO_SNDBUF, (char*)&bufSize, sizeof(bufSize));
+			setsockopt(m_clientSocket, SOL_SOCKET, SO_RCVBUF, (char*)&bufSize, sizeof(bufSize));
+			DWORD timeoutMs = 3000;
+			setsockopt(m_clientSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeoutMs, sizeof(timeoutMs));
+			setsockopt(m_clientSocket, SOL_SOCKET, SO_SNDTIMEO, (char*)&timeoutMs, sizeof(timeoutMs));
+			BOOL keepAlive = TRUE;
+			setsockopt(m_clientSocket, SOL_SOCKET, SO_KEEPALIVE, (char*)&keepAlive, sizeof(keepAlive));
+		}
 		int user_id = g_id++;
 
 		g_mapClient[user_id] = new SOCKET_INFO;
@@ -99,7 +120,7 @@ bool MainServer::Running()
 		g_mapClient[user_id]->over_info.wsaBuffer.buf = g_mapClient[user_id]->over_info.buffer;
 		g_mapClient[user_id]->over_info.is_recv = true;
 
-		printf("[Å¬¶óÀÌ¾ðÆ® Á¢¼Ó] ID : %d, IP : %s, PORT : %d, SOCKET : %d\n",  
+		printf("[Å¬ï¿½ï¿½ï¿½Ì¾ï¿½Æ® ï¿½ï¿½ï¿½ï¿½] ID : %d, IP : %s, PORT : %d, SOCKET : %d\n",  
 			user_id, inet_ntoa(m_clientAddr.sin_addr), ntohs(m_clientAddr.sin_port), (int)m_clientSocket);
 
 		memcpy(&g_mapClient[user_id]->addr_info, &m_clientAddr, sizeof(SOCKADDR_IN));
@@ -107,7 +128,7 @@ bool MainServer::Running()
 		m_flags = 0;
 		CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_clientSocket), g_iocp, user_id, 0);
 
-		// ³ª¸¦ Á¦¿ÜÇÑ ´Ù¸¥ Å¬¶óÀÌ¾ðÆ® ÀÌº¥Æ® Å¥¿¡ ³»°¡ Ãß°¡µÇ¾úÀ½À» ¾Ë¸®´Â ÀÌº¥Æ® Ãß°¡
+		// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¸ï¿½ Å¬ï¿½ï¿½ï¿½Ì¾ï¿½Æ® ï¿½Ìºï¿½Æ® Å¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ß°ï¿½ï¿½Ç¾ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ë¸ï¿½ï¿½ï¿½ ï¿½Ìºï¿½Æ® ï¿½ß°ï¿½
 		EVENTINFO info;
 		info.size = sizeof(info);
 		info.type = SP_EVENT;
@@ -136,7 +157,7 @@ bool MainServer::Running()
 			int err_no = WSAGetLastError();
 			if (WSA_IO_PENDING != err_no)
 			{
-				error_display("WSARecv ÇÔ¼ö ¿¡·¯");
+				error_display("WSARecv ï¿½Ô¼ï¿½ ï¿½ï¿½ï¿½ï¿½");
 				return false;
 			}
 		}
@@ -175,24 +196,34 @@ void MainServer::do_worker()
 	while (true)
 	{
 		DWORD byte;
-		ULONG key;
-		PULONG pKey = &key;
-		WSAOVERLAPPED *pOver;
+		ULONG_PTR key = 0;
+		WSAOVERLAPPED *pOver = nullptr;
 
-		// Åë½Å ¿Ï·á »óÅÂÀÇ ¼ÒÄÏÀ» Å¥·Î ºÎÅÍ °¡Áö°í ¿Â´Ù.
-		GetQueuedCompletionStatus(g_iocp, &byte, (PULONG_PTR)pKey,
+		// ï¿½ï¿½ï¿½ ï¿½Ï·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Â´ï¿½.
+		GetQueuedCompletionStatus(g_iocp, &byte, &key,
 			&pOver, INFINITE);
 
-		SOCKET clientsocket = g_mapClient[key]->socket;
+		// ì´ë¯¸ ì¢…ë£Œëœ í‚¤ì˜ stale ì™„ë£ŒëŠ” ë¬´ì‹œ(ë§µ ì¡´ìž¬ ê²€ì‚¬)
+		auto itKey = g_mapClient.find((int)key);
+		if (itKey == g_mapClient.end())
+		{
+			// ì „ì†¡ ì™„ë£Œ ë©”ëª¨ë¦¬ëŠ” do_worker ì†¡ì‹  ë¶„ê¸°ê°€ deleteí•˜ë¯€ë¡œ ì—¬ê¸°ì„œëŠ” ì ‘ê·¼í•˜ì§€ ì•ŠìŒ
+			if (pOver != nullptr && pOver != (WSAOVERLAPPED*)nullptr)
+			{
+				// recv OVERLAPPEDëŠ” SOCKET_INFOê°€ ì†Œìœ í•˜ë¯€ë¡œ ì‚­ì œí•˜ì§€ ì•ŠìŒ
+			}
+			continue;
+		}
+		SOCKET clientsocket = itKey->second->socket;
 
 		if (0 == byte)
 		{
 			closesocket(clientsocket);
-			printf("[Å¬¶óÀÌ¾ðÆ® Á¾·á] ID : %d, IP : %s, PORT : %d, SOCKET : %d\n",
-				key, inet_ntoa(g_mapClient[key]->addr_info.sin_addr),
-					 ntohs(g_mapClient[key]->addr_info.sin_port), (int)clientsocket);
+			printf("[Å¬ï¿½ï¿½ï¿½Ì¾ï¿½Æ® ï¿½ï¿½ï¿½ï¿½] ID : %d, IP : %s, PORT : %d, SOCKET : %d\n",
+				key, inet_ntoa(itKey->second->addr_info.sin_addr),
+					 ntohs(itKey->second->addr_info.sin_port), (int)clientsocket);
 
-			// Á¾·á ÀÛ¾÷
+			// ï¿½ï¿½ï¿½ï¿½ ï¿½Û¾ï¿½
 			EVENTINFO info;
 			info.size = sizeof(info);
 			info.type = SP_EVENT;
@@ -206,9 +237,8 @@ void MainServer::do_worker()
 				cl.second->event_lock.unlock();
 			}
 
-			delete g_mapClient[key];
-			g_mapClient[key] = nullptr;
-			g_mapClient.erase(key);
+			delete itKey->second;
+			g_mapClient.erase(itKey);
 			continue;
 		}
 
@@ -216,20 +246,20 @@ void MainServer::do_worker()
 
 		if (true == over_info->is_recv)
 		{
-			// ÆÐÅ¶À» ´Ù ¹ÞÀ»¶§
+			// ï¿½ï¿½Å¶ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
-			// Å¬¶óÀÌ¾ðÆ®¿¡¼­ ¹ÞÀº ÆÐÅ¶À» Ã³¸®
-			ProcessPacket(key, over_info->buffer, byte);
+			// Å¬ï¿½ï¿½ï¿½Ì¾ï¿½Æ®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å¶ï¿½ï¿½ Ã³ï¿½ï¿½
+			ProcessPacket((int)key, over_info->buffer, byte);
 
-			// ¹Þ¾ÒÀ»¶§ÀÇ Ã³¸®
+			// ï¿½Þ¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½
 			DWORD flags = 0;
 			memset(&over_info->over, 0x00, sizeof(WSAOVERLAPPED));
 			WSARecv(clientsocket, &over_info->wsaBuffer, 1, 0, &flags, &over_info->over, NULL);
 		}
 		else
 		{
-			// Àü¼ÛÇÒ¶§ÀÇ Ã³¸®
-			// SendÇÒ¶§ 
+			// ï¿½ï¿½ï¿½ï¿½ï¿½Ò¶ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½
+			// Sendï¿½Ò¶ï¿½ 
 			delete over_info;
 		}
 	}
@@ -237,7 +267,7 @@ void MainServer::do_worker()
 
 void MainServer::do_scene()
 {
-	// cpu Áøµ¿¼ö·Î timedelta °è»ê
+	// cpu ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ timedelta ï¿½ï¿½ï¿½
 	LARGE_INTEGER cpuTick;
 	LARGE_INTEGER fixTime;
 	LARGE_INTEGER lastTime;
@@ -252,7 +282,7 @@ void MainServer::do_scene()
 	float TimeAcc = 0.f;
 	float FrameLimitTime = 1 / 60.f;
 
-	// SceneÀ» ÃÊ±âÈ­ ÇÑ´Ù.
+	// Sceneï¿½ï¿½ ï¿½Ê±ï¿½È­ ï¿½Ñ´ï¿½.
 	for (int i = SCENE_MENU; i < SCENE_END; ++i)
 	{
 		Scene* s = nullptr;
@@ -274,7 +304,7 @@ void MainServer::do_scene()
 		if (nullptr != s &&
 			false == s->Initialize())
 		{
-			cout << "Scene ÃÊ±âÈ­ ½ÇÆÐ!" << endl;
+			cout << "Scene ï¿½Ê±ï¿½È­ ï¿½ï¿½ï¿½ï¿½!" << endl;
 			delete s;
 			s = nullptr;
 			return;
@@ -312,40 +342,43 @@ void MainServer::do_scene()
 
 void MainServer::ProcessPacket(int id, void* buf, int recv_byte)
 {
+	if (nullptr == buf || recv_byte < 3) return;
+	auto itSelf = g_mapClient.find(id);
+	if (itSelf == g_mapClient.end() || nullptr == itSelf->second) return;
 	char* packet = reinterpret_cast<char*> (buf);
 
 #ifdef LOG_CHECK
 	SOCKET_INFO* sockInfo = g_mapClient[id];
 	printf("-----------------------------------------------------\n");
-	printf("[¼ö½Å] ID : %d, IP : %s, PORT : %d, SOCKET : %d\n",
+	printf("[ï¿½ï¿½ï¿½ï¿½] ID : %d, IP : %s, PORT : %d, SOCKET : %d\n",
 		id, inet_ntoa(g_mapClient[id]->addr_info.sin_addr),
 		ntohs(g_mapClient[id]->addr_info.sin_port), g_mapClient[id]->socket);
-	printf("[¼ö½Å ³»¿ª] ");
+	printf("[ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½] ");
 	switch (packet[2])
 	{
 	case SP_LOGIN_OK: 
-		printf(" ·Î±×ÀÎ ¿äÃ»");
+		printf(" ï¿½Î±ï¿½ï¿½ï¿½ ï¿½ï¿½Ã»");
 		break;
 	case SP_PLAYER:
-		printf(" Å¬¶óÀÌ¾ðÆ® ÇÃ·¹ÀÌ¾î Á¤º¸\n");
+		printf(" Å¬ï¿½ï¿½ï¿½Ì¾ï¿½Æ® ï¿½Ã·ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½\n");
 		break;
 	case SP_OTHERPLAYER:
-		printf(" ´Ù¸¥ Å¬¶óÀÌ¾ðÆ® ÇÃ·¹ÀÌ¾î Á¤º¸ ¿äÃ»");
+		printf(" ï¿½Ù¸ï¿½ Å¬ï¿½ï¿½ï¿½Ì¾ï¿½Æ® ï¿½Ã·ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ã»");
 		break;
 	case SP_MONSTER:
-		printf(" ¸ó½ºÅÍ Á¤º¸ ¿äÃ»");
+		printf(" ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ã»");
 		break;
 	case SP_HIT:
-		printf(" °ø°Ý Á¤º¸");
+		printf(" ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
 		break;
 	case SP_GONEXT:
-		printf(" ¾À ÀüÈ¯ Á¤º¸");
+		printf(" ï¿½ï¿½ ï¿½ï¿½È¯ ï¿½ï¿½ï¿½ï¿½");
 		break;
 	case SP_EVENT:
-		printf(" ÀÌº¥Æ® Á¤º¸ ¿äÃ»");
+		printf(" ï¿½Ìºï¿½Æ® ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ã»");
 		break;
 	}
-	printf(" | ¼ö½Å ¹ÞÀº ¹ÙÀÌÆ® Å©±â : %d[byte]\n", recv_byte);
+	printf(" | ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ® Å©ï¿½ï¿½ : %d[byte]\n", recv_byte);
 	printf("-----------------------------------------------------\n\n");
 #endif
 
@@ -353,7 +386,9 @@ void MainServer::ProcessPacket(int id, void* buf, int recv_byte)
 	{
 	case SP_PLAYER:
 	{
+		if (recv_byte < (int)sizeof(SPPLAYER)) break;
 		SPPLAYER *PlayerInfo = reinterpret_cast<SPPLAYER*> (buf);
+		if (PlayerInfo->scene_state < SCENE_MENU || PlayerInfo->scene_state >= SCENE_END) break;
 		g_mapClient[id]->scene_state = PlayerInfo->scene_state;
 		g_mapClient[id]->player_info.pos_x = PlayerInfo->info.pos_x;
 		g_mapClient[id]->player_info.pos_y = PlayerInfo->info.pos_y;
@@ -363,13 +398,20 @@ void MainServer::ProcessPacket(int id, void* buf, int recv_byte)
 	break;
 	case SP_HIT:
 	{
+		if (recv_byte < (int)sizeof(SPHIT)) break;
 		SPHIT* HitInfo = reinterpret_cast<SPHIT*> (buf);
-		Scene* curScene = m_vecScene[g_mapClient[HitInfo->id]->scene_state];
+		auto itHit = g_mapClient.find(HitInfo->id);
+		if (itHit == g_mapClient.end() || nullptr == itHit->second) break;
+		if (itHit->second->scene_state < SCENE_MENU || itHit->second->scene_state >= SCENE_END) break;
+		if (itHit->second->scene_state >= (char)m_vecScene.size()) break;
+		Scene* curScene = m_vecScene[itHit->second->scene_state];
 		if (nullptr == curScene)
-			return;
-		Monster* DstMon = curScene->GetMapSpawn().find(HitInfo->monster_id)->second->GetMonster();
+			break;
+		auto itMon = curScene->GetMapSpawn().find(HitInfo->monster_id);
+		if (itMon == curScene->GetMapSpawn().end() || nullptr == itMon->second) break;
+		Monster* DstMon = itMon->second->GetMonster();
 		if (nullptr == DstMon)
-			return;
+			break;
 		DstMon->Hit(HitInfo->id, HitInfo->damage);
 	}
 	break;
@@ -384,7 +426,7 @@ void MainServer::ProcessPacket(int id, void* buf, int recv_byte)
 		{
 			if (cl.first == GoNextInfo->id) continue;
 
-			// ´ÙÀ½À¸·Î ³Ñ¾î°¥ ¾À¿¡ Á¸ÀçÇÏ´Â À¯Àúµé¿¡°Ô ÀÌº¥Æ® Å¥¿¡ ³»°¡ Ãß°¡µÇ¾úÀ½À» ¾Ë¸°´Ù.
+			// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ¾î°¥ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½é¿¡ï¿½ï¿½ ï¿½Ìºï¿½Æ® Å¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ß°ï¿½ï¿½Ç¾ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ë¸ï¿½ï¿½ï¿½.
 			if (GoNextInfo->next_scene_state == cl.second->scene_state)
 			{
 				info.event_state = EV_PUTOTHERPLAYER;
@@ -395,7 +437,7 @@ void MainServer::ProcessPacket(int id, void* buf, int recv_byte)
 				cl.second->event_lock.unlock();
 			}
 			
-			// ÇöÀç ¾À¿¡ Á¸ÀçÇÏ´Â À¯Àúµé¿¡°Ô ÀÌº¥Æ® Å¥¿¡ ³»°¡ »ç¶óÁ³À½À» ¾Ë¸°´Ù.
+			// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½é¿¡ï¿½ï¿½ ï¿½Ìºï¿½Æ® Å¥ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ë¸ï¿½ï¿½ï¿½.
 			if (GoNextInfo->cur_scene_state == cl.second->scene_state)
 			{
 				info.event_state = EV_END;
@@ -414,15 +456,18 @@ void MainServer::ProcessPacket(int id, void* buf, int recv_byte)
 		short total_size = 0;
 		memcpy(&total_size, ChatInfo, sizeof(short));
 		short chat_start = sizeof(short) + sizeof(char) + sizeof(int);
-		int chat_size = total_size - chat_start;
+		int chat_size = (int)total_size - (int)chat_start;
+		if (total_size < chat_start || total_size > recv_byte || chat_size < 0 || chat_size > (int)sizeof(((EVENTINFO*)nullptr)->chat_buffer) || recv_byte < 7) break;
 
 		EVENTINFO info;
 		info.size = sizeof(info);
 		info.type = SP_EVENT;
 		info.event_state = EV_CHAT;
 		memcpy(&info.id, &ChatInfo[3], sizeof(int));
-		info.scene_state = g_mapClient[info.id]->scene_state;
-		info.chat_size = chat_size;
+		auto itChat = g_mapClient.find(info.id);
+		if (itChat == g_mapClient.end() || nullptr == itChat->second) break;
+		info.scene_state = itChat->second->scene_state;
+		info.chat_size = (char)chat_size;
 		memcpy(&info.chat_buffer, &ChatInfo[7], info.chat_size);
 
 		for (auto& cl : g_mapClient)
@@ -447,32 +492,32 @@ void MainServer::SendProcess(int send_id, void* buf)
 #ifdef LOG_CHECK
 	SOCKET_INFO* sockInfo = g_mapClient[send_id];
 	printf("-----------------------------------------------------\n");
-	printf("[¼Û½Å] ID : %d, IP : %s, PORT : %d, SOCKET : %d\n",
+	printf("[ï¿½Û½ï¿½] ID : %d, IP : %s, PORT : %d, SOCKET : %d\n",
 		send_id, inet_ntoa(g_mapClient[send_id]->addr_info.sin_addr),
 		ntohs(g_mapClient[send_id]->addr_info.sin_port), g_mapClient[send_id]->socket);
-	printf("[¼Û½Å ³»¿ª] ");
+	printf("[ï¿½Û½ï¿½ ï¿½ï¿½ï¿½ï¿½] ");
 	switch (packet[2])
 	{
 	case SP_LOGIN_OK:
-		printf(" ·Î±×ÀÎ Á¤º¸");
+		printf(" ï¿½Î±ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
 		break;
 	case SP_PLAYER:
-		printf(" Å¬¶óÀÌ¾ðÆ® ÇÃ·¹ÀÌ¾î Á¤º¸\n");
+		printf(" Å¬ï¿½ï¿½ï¿½Ì¾ï¿½Æ® ï¿½Ã·ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½\n");
 		break;
 	case SP_OTHERPLAYER:
-		printf(" ´Ù¸¥ Å¬¶óÀÌ¾ðÆ® ÇÃ·¹ÀÌ¾î Á¤º¸");
+		printf(" ï¿½Ù¸ï¿½ Å¬ï¿½ï¿½ï¿½Ì¾ï¿½Æ® ï¿½Ã·ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½");
 		break;
 	case SP_MONSTER:
-		printf(" ¸ó½ºÅÍ Á¤º¸");
+		printf(" ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
 		break;
 	case SP_HIT:
-		printf(" °ø°Ý Á¤º¸");
+		printf(" ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½");
 		break;
 	case SP_GONEXT:
-		printf(" ¾À ÀüÈ¯ Á¤º¸");
+		printf(" ï¿½ï¿½ ï¿½ï¿½È¯ ï¿½ï¿½ï¿½ï¿½");
 		break;
 	case SP_EVENT:
-		printf(" ÀÌº¥Æ® Á¤º¸");
+		printf(" ï¿½Ìºï¿½Æ® ï¿½ï¿½ï¿½ï¿½");
 		break;
 	}
 #endif
@@ -492,12 +537,12 @@ void MainServer::SendProcess(int send_id, void* buf)
 	{
 		char tempBuffer[MAX_BUFFER];
 
-		// size typeÀ» ³ÖÀº ÆÐÅ¶ÀÇ ÁÖ¼Ò ½ÃÀÛ À§Ä¡
+		// size typeï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å¶ï¿½ï¿½ ï¿½Ö¼ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡
 		int startAddrPos = 2 + 1;
 		int count = 0;
 		for (auto& c : g_mapClient)
 		{
-			// ÀÚ½ÅÀº ³ÖÁö ¾Ê´Â´Ù.
+			// ï¿½Ú½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê´Â´ï¿½.
 			if (send_id == c.first)
 				continue;
 
@@ -512,6 +557,7 @@ void MainServer::SendProcess(int send_id, void* buf)
 			memcpy((tempBuffer + startAddrPos + sizeof(SPOTHERPLAYERS) * count),
 				&info, sizeof(SPOTHERPLAYERS));
 			++count;
+			if (startAddrPos + sizeof(SPOTHERPLAYERS) * (count + 1) > MAX_BUFFER) break;
 		}
 		// size
 		short size = sizeof(SPOTHERPLAYERS) * count + sizeof(short) + sizeof(char);
@@ -525,7 +571,7 @@ void MainServer::SendProcess(int send_id, void* buf)
 	case SP_MONSTER:
 	{
 		SCENESTATE CurSceneState = (SCENESTATE)packet[3];
-
+		if (CurSceneState < SCENE_MENU || CurSceneState >= SCENE_END || CurSceneState >= (char)m_vecScene.size()) break;
 		Scene* CurScene = m_vecScene[CurSceneState];
 		char tempBuffer[MAX_BUFFER];
 
@@ -538,7 +584,7 @@ void MainServer::SendProcess(int send_id, void* buf)
 			break;
 		}
 
-		// size typeÀ» ³ÖÀº ÆÐÅ¶ÀÇ ÁÖ¼Ò ½ÃÀÛ À§Ä¡
+		// size typeï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Å¶ï¿½ï¿½ ï¿½Ö¼ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡
 		int startAddrPos = 2 + 1;
 		int count = 0;
 		for (auto& s : CurScene->GetMapSpawn())
@@ -564,6 +610,7 @@ void MainServer::SendProcess(int send_id, void* buf)
 			memcpy((tempBuffer + startAddrPos + sizeof(SPMONSTER) * count),
 				&monster_info, sizeof(SPMONSTER));
 			++count;
+			if (startAddrPos + sizeof(SPMONSTER) * (count + 1) > MAX_BUFFER) break;
 		}
 		// size
 		short size = short(sizeof(SPMONSTER) * count + sizeof(short) + sizeof(char));
@@ -575,21 +622,25 @@ void MainServer::SendProcess(int send_id, void* buf)
 	break;
 	case SP_EVENT:
 	{
-		g_mapClient[send_id]->event_lock.lock();
-		if (g_mapClient[send_id]->event_queue.empty())
+		auto itEv = g_mapClient.find(send_id);
+		if (itEv == g_mapClient.end() || itEv->second == nullptr) break;
+		itEv->second->event_lock.lock();
+		if (itEv->second->event_queue.empty())
 		{
-			g_mapClient[send_id]->event_lock.unlock();
+			itEv->second->event_lock.unlock();
 			EVENTINFO packet = EVENTINFO{ };
 			packet.size = sizeof(packet);
+			packet.type = SP_EVENT;
 			packet.event_state = EV_NONE;
 			SendPacket(send_id, &packet, sizeof(packet));
 			break;
 		}
 
-		const EVENTINFO& evInfo = g_mapClient[send_id]->event_queue.front();
+		const EVENTINFO& evInfo = itEv->second->event_queue.front();
 		EVENTINFO packet = evInfo;
-		g_mapClient[send_id]->event_queue.pop();
-		g_mapClient[send_id]->event_lock.unlock();
+		itEv->second->event_queue.pop();
+		itEv->second->event_lock.unlock();
+		packet.type = SP_EVENT;
 		SendPacket(send_id, &packet, sizeof(packet));
 	}
 	break;
@@ -598,20 +649,30 @@ void MainServer::SendProcess(int send_id, void* buf)
 
 void MainServer::SendPacket(int send_id, void* buf, int size)
 {
+	if (nullptr == buf || size <= 0 || size > MAX_BUFFER) return;
+	auto itSend = g_mapClient.find(send_id);
+	if (itSend == g_mapClient.end() || itSend->second == nullptr) return;
 	char* packet = reinterpret_cast<char*>(buf);
 	int packet_size = size;
 
 #ifdef LOG_CHECK
-	printf(" | ¼Û½ÅÇÑ ¹ÙÀÌÆ® Å©±â : %d[byte]\n", packet_size);
+	printf(" | ï¿½Û½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ® Å©ï¿½ï¿½ : %d[byte]\n", packet_size);
 	printf("-----------------------------------------------------\n\n");
 #endif
 
 	OVERLAPPED_INFO* send_over = new OVERLAPPED_INFO;
 	memset(send_over, 0x00, sizeof(OVERLAPPED_INFO));
-	send_over->is_recv = false; // recv ¾Æ´Ï´Ù~
+	send_over->is_recv = false; // recv ï¿½Æ´Ï´ï¿½~
 	memcpy(send_over->buffer, packet, packet_size);
 	send_over->wsaBuffer.buf = send_over->buffer;
 	send_over->wsaBuffer.len = packet_size;
-	int result = WSASend(g_mapClient[send_id]->socket, &send_over->wsaBuffer, 1, 0, 0, &send_over->over, NULL);
-	result = 0;
+	int result = WSASend(itSend->second->socket, &send_over->wsaBuffer, 1, 0, 0, &send_over->over, NULL);
+	if (SOCKET_ERROR == result)
+	{
+		int err = WSAGetLastError();
+		if (WSA_IO_PENDING != err)
+		{
+			delete send_over;
+		}
+	}
 }
