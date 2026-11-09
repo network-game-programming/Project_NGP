@@ -22,7 +22,7 @@ bool Scene::InitializeNetwork(SCENESTATE curScene)
 {
 	m_curScene = curScene;
 
-	// Å¥ï¿½Îºï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ß´ï¿½ ï¿½Ù¸ï¿½ ï¿½Ã·ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ş´Â´ï¿½.
+	// Å¥·ÎºÎÅÍ ¹ŞÁö ¸øÇß´ø ´Ù¸¥ ÇÃ·¹ÀÌ¾î Á¤º¸¸¦ ¹Ş´Â´Ù.
 	char otherInfo[MAX_BUFFER] = { 0, };
 	if (true == m_NetworkManager->SendAndRecvOtherInfo(otherInfo))
 	{
@@ -60,7 +60,7 @@ bool Scene::InitializeNetwork(SCENESTATE curScene)
 	}
 	else
 	{
-		MessageBox(g_hWnd, L"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.", L"Error", MB_OK);
+		MessageBox(g_hWnd, L"¼­¹ö¿¡ ¿¬°áÇÒ ¼ö ¾ø½À´Ï´Ù.", L"Error", MB_OK);
 		return false;
 	}
 
@@ -69,22 +69,6 @@ bool Scene::InitializeNetwork(SCENESTATE curScene)
 
 bool Scene::UpdateNetwork()
 {
-	// LAN ë¶€í•˜ ê°ì†Œ: ë„¤íŠ¸ì›Œí¬ëŠ” ë§¤ í”„ë ˆì„ì´ ì•„ë‹Œ 20Hzë¡œë§Œ ìˆ˜í–‰
-	static LARGE_INTEGER lastNet;
-	static bool firstNet = true;
-	LARGE_INTEGER now;
-	QueryPerformanceCounter(&now);
-	if (firstNet)
-	{
-		lastNet = now;
-		firstNet = false;
-	}
-	LARGE_INTEGER freq;
-	QueryPerformanceFrequency(&freq);
-	if ((now.QuadPart - lastNet.QuadPart) * 1000 < freq.QuadPart * 50)
-		return true;
-	lastNet = now;
-
 	if (false == UpdateNetPlayer())
 		return false;
 	if (false == UpdateNetOthers())
@@ -102,7 +86,7 @@ bool Scene::UpdateNetwork()
 
 bool Scene::UpdateNetPlayer()
 {
-	// ï¿½Ã·ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
+	// ÇÃ·¹ÀÌ¾î Á¤º¸¸¦ º¸³½´Ù.
 	GameObject* player = m_ObjManager->GetObjFromType(OBJ_PLAYER).begin()->second;
 
 	GAMEOBJINFO objInfo = player->GetInfo();
@@ -113,7 +97,7 @@ bool Scene::UpdateNetPlayer()
 
 	if (false == m_NetworkManager->SendPlayerInfo(m_curScene, PInfo))
 	{
-		MessageBox(g_hWnd, L"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.", L"Error", MB_OK);
+		MessageBox(g_hWnd, L"¼­¹ö¿¡ ¿¬°áÇÒ ¼ö ¾ø½À´Ï´Ù.", L"Error", MB_OK);
 		return false;
 	}
 
@@ -122,7 +106,7 @@ bool Scene::UpdateNetPlayer()
 
 bool Scene::UpdateNetOthers()
 {
-	// ï¿½Ù¸ï¿½ ï¿½Ã·ï¿½ï¿½Ì¾ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ş´Â´ï¿½.
+	// ´Ù¸¥ ÇÃ·¹ÀÌ¾î Á¤º¸¸¦ ¹Ş´Â´Ù.
 	char otherInfo[MAX_BUFFER] = { 0, };
 	if (true == m_NetworkManager->SendAndRecvOtherInfo(otherInfo))
 	{
@@ -149,22 +133,22 @@ bool Scene::UpdateNetOthers()
 
 			if (nullptr != other_player)
 			{
-				// ï¿½ï¿½Ä¡
+				// À§Ä¡
 				other_player->SetPosition(other_PInfo.info.pos_x, other_PInfo.info.pos_y);
 
-				// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½
+				// ½ºÇÁ¶óÀÌÆ® »óÅÂ
 				SPRITEINFO sprite_info = other_player->GetSpriteInfo();
 				sprite_info.CurState = other_PInfo.info.player_state;
 				other_player->SetSpriteInfo(sprite_info);
 
-				// ï¿½ï¿½ï¿½ï¿½
+				// ¹æÇâ
 				other_player->SetDirection((DIRECTION)other_PInfo.info.player_dir);
 			}
 		}
 	}
 	else
 	{
-		MessageBox(g_hWnd, L"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.", L"Error", MB_OK);
+		MessageBox(g_hWnd, L"¼­¹ö¿¡ ¿¬°áÇÒ ¼ö ¾ø½À´Ï´Ù.", L"Error", MB_OK);
 		return false;
 	}
 
@@ -173,8 +157,8 @@ bool Scene::UpdateNetOthers()
 
 bool Scene::UpdateNetMonster()
 {
-	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ş´Â´ï¿½.
-	// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´Â´ï¿½.
+	// ¸ó½ºÅÍ Á¤º¸¸¦ ¹Ş´Â´Ù.
+	// ¾À Á¤º¸¸¦ ³Ö´Â´Ù.
 	char otherInfo[MAX_BUFFER] = { 0, };
 	otherInfo[3] = m_curScene;
 	if (true == m_NetworkManager->SendAndRecvMonster(otherInfo))
@@ -224,21 +208,21 @@ bool Scene::UpdateNetMonster()
 				m_ObjManager->AddObject(tchar, monster,
 					OBJ_MONSTER);
 			}
-			// ï¿½ï¿½Ä¡
+			// À§Ä¡
 			monster->SetPosition(MInfo.info.pos_x, MInfo.info.pos_y);
 
-			// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½
+			// ½ºÇÁ¶óÀÌÆ® »óÅÂ
 			SPRITEINFO sprite_info = monster->GetSpriteInfo();
 			sprite_info.CurState = MInfo.info.monster_state;
 			monster->SetSpriteInfo(sprite_info);
 
-			// ï¿½ï¿½ï¿½ï¿½
+			// ¹æÇâ
 			monster->SetDirection((DIRECTION)MInfo.info.monster_dir);
 		}
 	}
 	else
 	{
-		MessageBox(g_hWnd, L"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.", L"Error", MB_OK);
+		MessageBox(g_hWnd, L"¼­¹ö¿¡ ¿¬°áÇÒ ¼ö ¾ø½À´Ï´Ù.", L"Error", MB_OK);
 		return false;
 	}
 
@@ -247,7 +231,7 @@ bool Scene::UpdateNetMonster()
 
 bool Scene::UpdateNetEvent()
 {
-	// ï¿½Ìºï¿½Æ® Ã³ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ´ï¿½.
+	// ÀÌº¥Æ® Ã³¸®¸¦ ÇÑ´Ù.
 	EVENTINFO evInfo;
 	if (true == m_NetworkManager->SendAndRecvEvent(&evInfo))
 	{
@@ -263,13 +247,13 @@ bool Scene::UpdateNetEvent()
 			other_player = m_ObjManager->GetObjFromTag(to_wstring(evInfo.id).c_str(),
 				OBJ_OTHERPLAYER);
 
-			// Å¥ï¿½Îºï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Sceneï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Sceneï¿½ï¿½ ï¿½Ù¸ï¿½ ï¿½ï¿½ï¿½ï¿½ 
-			// ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¸ï¿½ Sceneï¿½ï¿½ ï¿½Ö´Ù´ï¿½ ï¿½ï¿½ï¿½Ì¹Ç·ï¿½ ï¿½ß°ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê´Â´ï¿½.
-			// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¥ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 
-			// ï¿½ï¿½ ï¿½Ê±ï¿½È­ ï¿½Ò¶ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ß°ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½.
+			// Å¥·ÎºÎÅÍ º¸³»¿Â Á¤º¸ÀÇ ´Ù¸¥ À¯ÀúÀÇ SceneÀÌ ÇöÀç Scene°ú ´Ù¸¥ °æ¿ì´Â 
+			// ¼­·Î ´Ù¸¥ Scene¿¡ ÀÖ´Ù´Â ¶æÀÌ¹Ç·Î Ãß°¡ÇÏÁö ¾Ê´Â´Ù.
+			// ÇÏÁö¸¸ ÀÌ Á¤º¸°¡ ¼­¹öÀÇ Å¥¿¡¼­ »ç¶óÁö±â ¶§¹®¿¡ 
+			// ¾À ÃÊ±âÈ­ ÇÒ¶§¸¶´Ù Ãß°¡¸¦ ÇØÁà¾ßÇÑ´Ù.
 
 
-			// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ïµï¿½ idï¿½ï¿½ ï¿½Ã·ï¿½ï¿½Ì¾î°¡ ï¿½ï¿½ï¿½Ù¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½.
+			// ¸¸¾à µî·ÏµÈ idÀÇ ÇÃ·¹ÀÌ¾î°¡ ¾ø´Ù¸é ¸¸µç´Ù.
 			if (nullptr == other_player)
 			{
 				TCHAR* tchar = new TCHAR[64];
@@ -299,7 +283,7 @@ bool Scene::UpdateNetEvent()
 			other_player = m_ObjManager->GetObjFromTag(to_wstring(evInfo.id).c_str(),
 				OBJ_OTHERPLAYER);
 
-			// Ã¤ï¿½ï¿½ï¿½ï¿½ Ä£ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ôµï¿½ Ç³ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½.
+			// Ã¤ÆÃÀ» Ä£ À¯ÀúÀÇ ¸»ÀÌ Æ÷ÇÔµÈ Ç³¼±À» ¶ç¿î´Ù.
 			if (nullptr != other_player)
 			{
 				TCHAR tchar[25] = { 0, };
@@ -314,7 +298,7 @@ bool Scene::UpdateNetEvent()
 	}
 	else
 	{
-		MessageBox(g_hWnd, L"ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.", L"Error", MB_OK);
+		MessageBox(g_hWnd, L"¼­¹ö¿¡ ¿¬°áÇÒ ¼ö ¾ø½À´Ï´Ù.", L"Error", MB_OK);
 		return false;
 	}
 
